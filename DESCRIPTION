@@ -8,3 +8,5 @@ Description: in this package we show the goos practice when generating R package
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+URL: https://github.com/azzarito/demoBuildPackagesR
+BugReports: https://github.com/azzarito/demoBuildPackagesR/issues
