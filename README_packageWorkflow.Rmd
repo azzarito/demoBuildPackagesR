@@ -1,0 +1,231 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# Building R Packages
+
+
+
+# Before creation
+Before we get started we need to make sure we have the
+essential packages installed to create a R package development
+workflow
+
+```{r}
+#install.packages(c("devtools", "roxygen2", "usethis"))
+library(devtools)
+library(roxygen2)
+library(usethis)
+
+# other nice packages:
+# install.packages("usethis")
+# Or install the development version from GitHub with:
+# # install.packages("devtools")
+# devtools::install_github("r-lib/usethis")
+library(usethis)
+
+# packages to test functions:
+# devtools::install_github("r-lib/testthat")
+library(testthat)
+
+
+```
+
+
+# when creating an R package, the name needs to be unique (especially if you
+# plan to make it available on CRAN). Check available packages name using:
+
+```{r}
+library(available)
+available("buildPackageDemo")
+```
+
+# create a package:
+features commonly seen in released packages:
+
+* Functions to address a specific need, such as helpers to work with factors.
+* Access to established workflows for installation, getting help, and checking basic quality.
+* Version control and an open development process. (This is completely optional in your work, but recommended. You’ll see how Git and GitHub helps us expose all the intermediate stages of our package).
+* Documentation for individual functions via roxygen2.
+* Unit testing with testthat.
+
+
+```{r}
+# create_package("./buildPackageDemo")
+# or
+# usethis::create_package("mypackage")
+# or
+devtools::create("./buildPackageDemo")
+use_git()
+use_github()
+```
+
+after creating the new package the following appears in the folder:
+1. DESCRIPTION (SETUP)
+2. NAMESPACE (ORGANIZE)
+3. R/ (folder - WRITE CODE)
+4. man/ (folder-DOCUMENT)
+5. tests (folder -TESTS)
+6. vignette (folder -TEACH)
+7. data (folder -ADD DATA)
+
+
+# 1.DESCRIPTION
+The DESCRIPTION file provides metadata about your package. It specifies who can use it (the license) and whom to contact (you!) if there are any problems.
+
+Firstly we will go into the DESCRIPTION file and make sure that the Authors@R is populated correctly and modify the Title and Description fields.
+
+* Title is a one line description of the package, and is often shown in package listing. It should be plain text (no markup), capitalised like a title, and NOT end in a period. Keep it short: listings will often truncate the title to 65 characters.
+
+* Description is more detailed than the title. You can use multiple sentences but you are limited to one paragraph. If your description spans multiple lines (and it should!), each line must be no more than 80 characters wide. Indent subsequent lines with 4 spaces.
+
+
+## License
+Open source software licensing is a rich and complex field. Fortunately, there are only three licenses that you should consider for your R package:
+
+* MIT (v. similar: to BSD 2 and 3 clause licenses). This is a simple and permissive license. It lets people use and freely distribute your code subject to only one restriction: the license must always be distributed with the code.
+
+* GPL-2 or GPL-3. These are “copy-left” licenses. This means that anyone who distributes your code in a bundle must license the whole bundle in a GPL-compatible way. Additionally, anyone who distributes modified versions of your code (derivative works) must also make the source code available. GPL-3 is a little stricter than GPL-2, closing some older loopholes.
+
+* CC0. It relinquishes all your rights on the code and data so that it can be freely used by anyone for any purpose. 
+
+
+If you’d like to learn more about other common licenses, Github’s [choosealicense.com] is a good place to start. Another good resource is [https://tldrlegal.com/], which explains the most important parts of each license. If you use a license other than the three I suggest, make sure you consult the “Writing R Extensions” section on licensing.
+
+If your package includes code that you didn’t write, you need to make sure you’re in compliance with its license. Since this occurs most commonly when you’re including C source code, it’s discussed in more detail in compiled code.
+Next we will license the package. This can be done using one of the following functions (we will use MIT for this example)
+
+
+
+```{r}
+use_mit_license()
+# use_gpl3_license()
+# use_apl2_license()
+# use_cc0_license()
+
+```
+## Dependencies
+In the Description, we have to specify **Dependencies**:
+using Imports and Suggests which take a comma separated list of package names.  Recommandation one package on each line, and keeping them in alphabetical order.
+
+**Imports**: list the packages that your package needs to work.
+packages listed here must be present for your package to work. In fact, any time your package is installed, those packages will, if not already present, be installed on your computer (devtools::load_all() also checks that the packages are installed).
+
+For example, the following lines indicate that your package needs both ggvis and dplyr to work:
+
+Imports:
+    dplyr,
+    ggvis
+    
+Adding a package dependency here ensures that it’ll be installed. However, it does not mean that it will be attached along with your package (i.e., library(x)). The best practice is to explicitly refer to external functions using the syntax package::function(). This makes it very easy to identify which functions live outside of your package. This is especially useful when you read your code in the future.
+
+**Suggests**: your package can use these packages, but doesn’t require them. You might use suggested packages for example datasets, to run tests, build vignettes, or maybe there’s only one function that needs the package.
+
+Packages listed in Suggests are not automatically installed along with your package. This means that you need to check if the package is available before using it (use requireNamespace(x, quietly = TRUE)). 
+
+
+Suggests:
+    dplyr,
+    ggvis
+    
+The easiest way to add Imports and Suggests to your package is to use usethis::use_package(). This automatically puts them in the right place in your DESCRIPTION, and reminds you how to use them.
+
+```{r}
+usethis::use_package("dplyr") # Defaults to imports
+#> Adding dplyr to Imports
+#> Refer to functions with dplyr::fun()
+usethis::use_package("dplyr", "Suggests")
+#> Adding dplyr to Suggests
+#> Use requireNamespace("dplyr", quietly = TRUE) to test if package is 
+#>  installed, then use dplyr::fun() to refer to functions.
+```
+
+For more deatails see (chapter 8)[https://r-pkgs.org/description.html#description]; and for more details on the (usethis) function [https://usethis.r-lib.org/].
+
+
+# 2. WRITE CODE (R/)
+
+ all R code goes in R subfolder.
+ 
+ workflow:
+ - 2.1 create and edit code (.R file)
+ - 2.2 Load your code with one of
+  devtools::load_all()
+  Re-loads all saved files in " R/ into memory.
+  Ctrl/Cmd + Shif + L (keyboard shortcut)
+  Saves all open files then calls load_all().
+ - 2.3. Experiment in the console.
+ - 2.4. Repeat
+ - 2.5 check() Read the output of the check! Deal with problems early and often.
+
+for example see R/hello.R or R/fbind.R or the (Toy Package)[https://r-pkgs.org/whole-game.html]
+
+
+#3. DOCUMENT (man/)
+Documentation is one of the most important aspects of a good package. Without it, users won’t know how to use your package. Documentation is also useful for future-you (so you remember what your functions were supposed to do), and for developers extending your package.
+
+There are multiple forms of documentation. In this chapter, you’ll learn about object documentation, as accessed by ? or help()
+
+The package roxygen2 handle the creation of man/fbind.Rd. The motivation and mechanics of roxygen2 are covered in (chapter 10)[https://r-pkgs.org/man.html#man].
+
+The complete documentation workflow includes four basic steps:
+
+- 3.1 Add roxygen comments to your .R files.
+- 3.2 Run devtools::document() (or press Ctrl/Cmd + Shift + D in RStudio) to convert roxygen comments to .Rd files. (devtools::document() calls roxygen2::roxygenise() to do the hard work.)
+- 3.3 Preview documentation with ?.
+- 3.4 Rinse and repeat until the documentation looks the way you want.
+
+
+# 5. TESTS
+We can formalize and expand this with some unit tests. 
+
+this means we express a few concrete expectations about the correct fbind() result for various inputs.
+
+First, we declare our intent to write unit tests and to use the testthat package for this, via use_testthat():
+
+```{r}
+use_test("fbind")
+```
+
+
+
+
+##################################################################
+
+# How to use the package:
+
+
+## Installation
+
+You can install the released version of buildPackageDemo from [CRAN](https://CRAN.R-project.org) with:
+
+``` {r example}
+install.packages("buildPackageDemo")
+```
+
+## readme file
+
+You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/master/examples>.
+
+
+
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r example}
+library(buildPackageDemo)
+## basic example code
+```
+
+
